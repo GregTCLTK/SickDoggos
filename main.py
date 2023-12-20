@@ -4,29 +4,39 @@ import torch.nn as nn
 
 
 def train(D):
+    # Teilt das Dataset D in Trainings- und Testdaten auf. Die ersten 200 Einträge sind Trainingsdaten, der Rest sind Testdaten.
+    train, test = D[:200], D[200:]
 
-    train, test = D[:200], D[200:]  # Die Auswertung der Aufgabe basiert auf diesem Split
-
-    # Hyper-parameter
+    # Definiert die Hyperparameter für das Training.
+    # n_steps: Anzahl der Trainingsschritte
+    # input_size: Anzahl der Eingangsmerkmale
+    # output_size: Anzahl der Ausgangsmerkmale
+    # learning_rate: Lernrate für den Optimierer
     n_steps = 2000
     input_size = 13
     output_size = 1
     learning_rate = 0.01
 
-    # Trainings-Daten vorbereiten
+    # Bereitet die Trainingsdaten vor.
+    # X: Eingangsmerkmale
+    # y: Zielmerkmale
+    # X_train und y_train sind Tensoren, die aus den Numpy-Arrays X und y erstellt wurden.
     X = train[:, :-1].astype(np.float32)
     y = train[:, -1].astype(np.float32)
     X_train = torch.from_numpy(X)
     y_train = torch.from_numpy(y)
+    # Berechnet den Durchschnitt der Merkmale für die spätere Normalisierung.
     feature_means = torch.mean(X_train, dim=0)
 
-    # Test-Daten vorbereiten
+    # Bereitet die Testdaten vor.
+    # X_test und y_test sind Tensoren, die aus den Numpy-Arrays X und y erstellt wurden.
     X = test[:, :-1].astype(np.float32)
     y = test[:, -1].astype(np.float32)
     X_test = torch.from_numpy(X)
     y_test = torch.from_numpy(y)
 
-    # Modell definieren
+    # Definiert das Modell als eine Klasse, die von nn.Module erbt.
+    # Das Modell ist ein mehrschichtiges Perzeptron (MLP).
     class MLP(nn.Module):
         def __init__(self, input_size):
             super().__init__()
@@ -40,15 +50,18 @@ def train(D):
             out = self.layers(x)
             return out
 
+    # Definiert das Modell. Hier wird die zuvor definierte MLP-Klasse verwendet.
+    # Die Anzahl der Eingangsmerkmale wird als Parameter übergeben.
     model = MLP(input_size)
 
-    # loss and optimizer
-    # checkout: https://pytorch.org/docs/stable/nn.html#torch.nn.BCEWithLogitsLoss
+    # Definiert die Verlustfunktion. In diesem Fall wird die BCEWithLogitsLoss-Funktion verwendet,
+    # die eine Kombination aus einer Sigmoid-Aktivierung und einer binären Kreuzentropie-Verlustfunktion ist.
     criterion = nn.BCEWithLogitsLoss()  # sigmoid + binary cross entropy
 
-    # optimizer
-    # Dokumentation: https://pytorch.org/docs/stable/optim.html#torch.optim.Adam
+    # Definiert den Optimierer. Hier wird der Adam-Optimierer verwendet.
+    # Die Parameter des Modells und die Lernrate werden als Parameter übergeben.
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
     # Alternative zu Adam
     # Dokumentation: https://pytorch.org/docs/stable/optim.html#torch.optim.SGD
     # momentum = 0.9  # Wert zwischen 0. und 1.
@@ -79,8 +92,7 @@ def train(D):
         is_correct = torch.eq(pred_y, y_test.byte()).float()
         accuracy_test = torch.mean(is_correct).item()
 
-    print(f'Epoch {e}, Loss: {loss:.4f}, Acc train: {accuracy_train:.2f},' \
-          f'Acc test: {accuracy_test:.2f}')
+    print('Model trainiert')
     return model
 
 D = np.load('./train_data.npy')
